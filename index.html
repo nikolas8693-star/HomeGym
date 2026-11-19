@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Allenamento di Casa</title>
+<meta name="theme-color" content="#1F3A5F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Allenamento">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" href="icons/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* layout: app a colonna singola pensata per il telefono, barra di navigazione fissa in basso */
+  --bg:#EEF0EC; --surface:#FFFFFF; --ink:#141C24; --muted:#5B6773; --line:#D8DDDF;
+  --accent:#D9480F; --accent-ink:#FFFFFF; --soft:#FCE9DE;
+  --train:#1F3A5F; --train-soft:#DCE6F1; --rest:#2F7A45; --rest-soft:#DDF0E2; --warn:#B42318; --done:#1E9E4A; --done-soft:#DDF5E5;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1318; --surface:#171F27; --ink:#E8EDF1; --muted:#95A3AF; --line:#29343E;
+    --accent:#FF7A3D; --accent-ink:#1B0D04; --soft:#2B1B11;
+    --train:#8DB3E2; --train-soft:#1C2B3C; --rest:#7CC892; --rest-soft:#16291D; --warn:#FF8A80; --done:#3DD27A; --done-soft:#123322;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1318; --surface:#171F27; --ink:#E8EDF1; --muted:#95A3AF; --line:#29343E;
+  --accent:#FF7A3D; --accent-ink:#1B0D04; --soft:#2B1B11;
+  --train:#8DB3E2; --train-soft:#1C2B3C; --rest:#7CC892; --rest-soft:#16291D; --warn:#FF8A80; --done:#3DD27A; --done-soft:#123322;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:.01em;line-height:1.1;text-wrap:balance;margin:0}
+h1{font-size:2.1rem} h2{font-size:1.55rem} h3{font-size:1.2rem}
+p{margin:0}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.app{max-width:760px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 16px) max(16px,env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.view{display:none;flex-direction:column;gap:16px}
+.view.on{display:flex}
+.muted{color:var(--muted)}
+.small{font-size:.88rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spread{justify-content:space-between}
+.btn{appearance:none;border:0;border-radius:12px;padding:13px 18px;font-weight:700;cursor:pointer;background:var(--accent);color:var(--accent-ink);text-align:center}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.small{padding:8px 12px;font-size:.9rem}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.eyebrow{font-family:var(--display);text-transform:uppercase;letter-spacing:.08em;font-size:.85rem;color:var(--accent);font-weight:700}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:.8rem;font-weight:600}
+.pill.train{background:var(--train-soft);color:var(--train)}
+.pill.rest{background:var(--rest-soft);color:var(--rest)}
+.pill.kcal{background:var(--soft);color:var(--accent)}
+.err{color:var(--warn);font-weight:600}
+/* welcome */
+.hero{padding:28px 20px;border-radius:18px;background:var(--train);color:#fff;display:flex;flex-direction:column;gap:12px}
+.hero h1{font-size:2.6rem}
+.hero .eyebrow{color:#FFB38A}
+.steps{display:grid;gap:10px}
+.step{display:flex;gap:12px;align-items:flex-start}
+.step b{font-family:var(--display);font-size:1.4rem;color:var(--accent);min-width:22px}
+/* upload */
+.drop{border:2px dashed var(--line);border-radius:14px;padding:26px 16px;text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center;cursor:pointer;background:var(--surface)}
+.drop.over{border-color:var(--accent);background:var(--soft)}
+.drop input{position:absolute;width:1px;height:1px;opacity:0}
+.progress{display:flex;gap:6px}
+.progress span{flex:1;height:5px;border-radius:3px;background:var(--line)}
+.progress span.on{background:var(--accent)}
+.found{display:flex;flex-wrap:wrap;gap:6px}
+/* calendar */
+.cal-head{display:flex;justify-content:space-between;align-items:center}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.day{min-width:0;appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:12px;min-height:118px;padding:7px 5px;display:flex;flex-direction:column;gap:4px;align-items:stretch;cursor:pointer;text-align:left}
+.day .dn{font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.day .n{font-family:var(--display);font-weight:700;font-size:1.5rem;line-height:1;font-variant-numeric:tabular-nums}
+.day .bar{height:5px;border-radius:3px;background:var(--rest)}
+.day .bar.t{background:var(--train)}
+.day .bar.ok{background:var(--done)}
+.day .k{font-size:.7rem;color:var(--muted);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2}
+.day .prog{font-size:.72rem;font-weight:700;color:var(--train);font-variant-numeric:tabular-nums}
+.day .prog.ok{color:var(--done)}
+.day.today{border:2px solid var(--accent)}
+.day.sel{background:var(--soft)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.82rem;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:5px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.check{appearance:none;flex:none;width:44px;height:44px;border-radius:50%;border:2.5px solid var(--line);background:var(--surface);display:grid;place-items:center;cursor:pointer;color:transparent;transition:background .15s,border-color .15s}
+.check svg{width:24px;height:24px}
+.check:hover{border-color:var(--done)}
+.check.on{background:var(--done);border-color:var(--done);color:#fff}
+.ex.done h3{color:var(--done)}
+.ex.done .imgbox{opacity:.55}
+.donebar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.donebar span{display:block;height:100%;background:var(--done);transition:width .2s}
+@media (prefers-reduced-motion: reduce){.check,.donebar span{transition:none}}
+/* exercise */
+.ex{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:12px}
+.ex:first-of-type{border-top:0;padding-top:0}
+.ex-top{display:flex;gap:12px;align-items:flex-start}
+.num{font-family:var(--display);font-size:1.5rem;color:var(--accent);min-width:24px;line-height:1}
+.imgbox{background:#fff;border-radius:10px;border:1px solid var(--line);overflow:hidden}
+.imgbox img{display:block;width:100%;max-width:100%;height:auto}
+.meta{display:flex;flex-wrap:wrap;gap:6px}
+.meta span{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px 8px;font-size:.85rem;font-variant-numeric:tabular-nums}
+details{border-radius:10px;background:var(--bg);padding:8px 12px}
+summary{cursor:pointer;font-weight:600}
+.pre{white-space:pre-line;margin-top:6px}
+.log{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.log label{font-size:.85rem;font-weight:600}
+.log input{flex:1;min-width:140px;padding:9px 10px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface)}
+.weeks{display:flex;flex-wrap:wrap;gap:4px}
+.weeks span{font-size:.75rem;border-radius:6px;padding:2px 6px;background:var(--bg);border:1px solid var(--line);font-variant-numeric:tabular-nums}
+.weeks span.cur{border-color:var(--accent);color:var(--accent);font-weight:700}
+.note{background:var(--soft);border-radius:10px;padding:10px 12px;font-weight:600}
+/* tabs */
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{appearance:none;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;white-space:nowrap;cursor:pointer;font-weight:600;font-size:.92rem}
+.tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+/* meals */
+.meal{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:10px 0;border-top:1px solid var(--line)}
+.meal:first-of-type{border-top:0}
+.meal h3{font-size:1.05rem}
+.meal .kc{font-family:var(--display);font-size:1.2rem;font-variant-numeric:tabular-nums;color:var(--accent);align-self:start}
+.meal .what{grid-column:1/-1;white-space:pre-line;color:var(--muted);font-size:.92rem}
+.totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.tot{background:var(--bg);border-radius:10px;padding:8px 10px}
+.tot b{display:block;font-family:var(--display);font-size:1.35rem;font-variant-numeric:tabular-nums}
+.tot span{font-size:.78rem;color:var(--muted)}
+.weekgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+/* tables */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:var(--train);color:#fff;font-weight:600;position:sticky;top:0}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* info */
+.info{display:grid;gap:4px;padding:10px 0;border-top:1px solid var(--line)}
+.info:first-of-type{border-top:0}
+.info h3{font-size:1.1rem;color:var(--train)}
+.info.alert h3{color:var(--warn)}
+/* weight */
+.wrow{display:grid;grid-template-columns:30px minmax(0,1.25fr) minmax(0,1fr) 48px;gap:6px;align-items:center}
+.wrow input{width:100%;min-width:0;padding:8px 6px;font-size:.92rem;border-radius:9px;border:1.5px solid var(--line);background:var(--surface);font-variant-numeric:tabular-nums}
+.wrow .d{font-variant-numeric:tabular-nums;text-align:right;font-weight:600}
+.chart svg{width:100%;height:auto;display:block}
+/* nav */
+nav.bottom{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav.bottom .in{display:flex;max-width:760px;width:100%}
+nav.bottom a{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 2px 8px;text-decoration:none;color:var(--muted);font-size:.72rem;font-weight:600}
+nav.bottom a svg{width:22px;height:22px}
+nav.bottom a.on{color:var(--accent)}
+nav.bottom.hide{display:none}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+@media (prefers-reduced-motion: reduce){.toast{transition:none}}
+@media (min-width:600px){.day{min-height:130px;padding:9px 8px}.day .k{font-size:.78rem}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- BENVENUTO -->
+<section class="view" id="v-benvenuto">
+  <div class="hero">
+    <span class="eyebrow">Allenamento di casa</span>
+    <h1>Scheda e dieta, giorno per giorno</h1>
+    <p>Carica i due file Excel e l'app crea il calendario con esercizi, immagini, pasti e calorie di ogni giorno.</p>
+  </div>
+  <div class="card">
+    <h2>Come funziona</h2>
+    <div class="steps">
+      <div class="step"><b>1</b><p>Carica il file Excel degli <strong>esercizi</strong> (es. Scheda_Allenamento_Casa.xlsx).</p></div>
+      <div class="step"><b>2</b><p>Carica il file Excel della <strong>dieta</strong> (es. Piano_Alimentare_Settimanale.xlsx).</p></div>
+      <div class="step"><b>3</b><p>Apri il calendario: tocca un giorno per vedere allenamento e pasti, e segna i pesi usati.</p></div>
+    </div>
+  </div>
+  <button class="btn" id="enter">Entra</button>
+  <p class="muted small">I file vengono letti solo su questo dispositivo, nel browser: non vengono inviati da nessuna parte.</p>
+</section>
+
+<!-- CARICA ESERCIZI -->
+<section class="view" id="v-carica-esercizi">
+  <div class="progress"><span class="on"></span><span></span></div>
+  <span class="eyebrow">Passo 1 di 2</span>
+  <h1>Carica gli esercizi</h1>
+  <p class="muted">Scegli il file Excel con la scheda di allenamento: un foglio per ogni giorno, con esercizi, descrizioni e immagini.</p>
+  <label class="drop" id="drop-ex" for="file-ex">
+    <input type="file" id="file-ex" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+    <strong>Tocca per scegliere il file .xlsx</strong>
+    <span class="muted small">oppure trascinalo qui</span>
+  </label>
+  <button class="btn ghost" id="demo-ex">Usa la mia scheda già pronta (Scheda_Allenamento_Casa.xlsx)</button>
+  <div class="card" id="res-ex" hidden></div>
+  <div class="row spread">
+    <button class="btn ghost" data-go="benvenuto">Indietro</button>
+    <button class="btn" id="next-ex" disabled>Avanti: dieta</button>
+  </div>
+</section>
+
+<!-- CARICA DIETA -->
+<section class="view" id="v-carica-dieta">
+  <div class="progress"><span class="on"></span><span class="on"></span></div>
+  <span class="eyebrow">Passo 2 di 2</span>
+  <h1>Carica la dieta</h1>
+  <p class="muted">Scegli il file Excel con il piano alimentare: il foglio "Calendario" con i pasti della settimana e le kcal.</p>
+  <label class="drop" id="drop-di" for="file-di">
+    <input type="file" id="file-di" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+    <strong>Tocca per scegliere il file .xlsx</strong>
+    <span class="muted small">oppure trascinalo qui</span>
+  </label>
+  <button class="btn ghost" id="demo-di">Usa il mio piano già pronto (Piano_Alimentare_Settimanale.xlsx)</button>
+  <div class="card" id="res-di" hidden></div>
+  <div class="row spread">
+    <button class="btn ghost" data-go="carica-esercizi">Indietro</button>
+    <button class="btn" id="next-di" disabled>Crea il calendario</button>
+  </div>
+</section>
+
+<!-- CALENDARIO -->
+<section class="view" id="v-calendario">
+  <div class="cal-head">
+    <button class="btn ghost small" id="prev" aria-label="Settimana precedente">‹</button>
+    <div style="text-align:center"><h1 id="month-title">Settimana</h1><p class="muted small" id="week-sub"></p></div>
+    <button class="btn ghost small" id="next" aria-label="Settimana successiva">›</button>
+  </div>
+  <div class="row spread"><div class="legend"><span><i style="background:var(--train)"></i>Allenamento</span><span><i style="background:var(--rest)"></i>Riposo</span><span><i style="background:var(--done)"></i>Completato</span></div><button class="btn ghost small" id="today-btn">Oggi</button></div>
+  <div class="cal" id="cal"></div>
+  <div id="daydetail" class="view on"></div>
+  <div class="card">
+    <div class="row spread">
+      <div><h3>Inizio programma</h3><p class="muted small">Serve a calcolare la settimana (Sett. 1-8) in cui segnare i pesi.</p></div>
+      <input type="date" id="start" style="padding:8px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface)">
+    </div>
+  </div>
+</section>
+
+<!-- ALLENAMENTO -->
+<section class="view" id="v-allenamento">
+  <span class="eyebrow">Scheda</span>
+  <h1>Allenamento</h1>
+  <div class="tabs" id="wtabs"></div>
+  <div id="wbody" class="view on"></div>
+</section>
+
+<!-- DIETA -->
+<section class="view" id="v-dieta">
+  <span class="eyebrow">Piano alimentare</span>
+  <h1>Dieta</h1>
+  <div class="tabs" id="dtabs"></div>
+  <div id="dbody" class="view on"></div>
+</section>
+
+<!-- INFO -->
+<section class="view" id="v-info">
+  <span class="eyebrow">Dal foglio "Come usare"</span>
+  <h1 id="info-title">Come usare la scheda</h1>
+  <div class="card" id="info-body"></div>
+</section>
+
+<!-- FILE -->
+<section class="view" id="v-file">
+  <span class="eyebrow">File caricati</span>
+  <h1>I tuoi file</h1>
+  <div class="card" id="files-body"></div>
+  <button class="btn" data-go="carica-esercizi">Carica di nuovo i file</button>
+  <button class="btn ghost" id="wipe">Cancella dati e pesi salvati su questo dispositivo</button>
+  <p class="muted small" id="wipe-msg"></p>
+</section>
+
+</div>
+
+<nav class="bottom hide" id="nav"><div class="in">
+  <a href="#calendario" data-r="calendario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Calendario</a>
+  <a href="#allenamento" data-r="allenamento"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 7v10M18 7v10M3 10v4M21 10v4M6 12h12"/></svg>Allenamento</a>
+  <a href="#dieta" data-r="dieta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3v8a2 2 0 0 0 2 2v8M5 3v5M9 3v5M16 21V3c2.5 1.5 3.5 4 3.5 7s-1.5 4-3.5 4"/></svg>Dieta</a>
+  <a href="#info" data-r="info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>Info</a>
+  <a href="#file" data-r="file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/></svg>File</a>
+</div></nav>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store={
+  get(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}},
+  del(k){try{localStorage.removeItem(k)}catch(e){}}
+};
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("on"),1800)}
+const DAYKEYS=["lun","mar","mer","gio","ven","sab","dom"];
+const DAYNAMES=["Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato","Domenica"];
+const MONTHS=["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+const norm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();
+const dayKeyOf=s=>{const k=norm(s).slice(0,3);return DAYKEYS.includes(k)?k:null};
+const isoOf=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const fmtNum=v=>typeof v==="number"?(Number.isInteger(v)?v.toLocaleString("it-IT"):(Math.round(v*10)/10).toLocaleString("it-IT")):v;
+const fmtCell=v=>{if(v==null)return"";if(typeof v==="number")return fmtNum(v);if(typeof v==="boolean")return v?"Sì":"No";if(/^\d{4}-\d{2}-\d{2}$/.test(v)){const[a,b,c]=v.split("-");return`${c}/${b}/${a}`}return v};
+
+/* ---------- lettore XLSX (zip + XML) ---------- */
+async function inflateRaw(u8){
+  if(typeof DecompressionStream==="undefined") throw new Error("Questo browser è troppo vecchio per leggere i file Excel. Aggiorna iOS/Safari o usa Chrome.");
+  const s=new Blob([u8]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+async function unzip(buf){
+  const u8=new Uint8Array(buf),dv=new DataView(buf),td=new TextDecoder();
+  let e=-1;for(let i=u8.length-22;i>=Math.max(0,u8.length-65558);i--){if(dv.getUint32(i,true)===0x06054b50){e=i;break}}
+  if(e<0) throw new Error("Il file non sembra un Excel .xlsx.");
+  const n=dv.getUint16(e+10,true);let p=dv.getUint32(e+16,true);const files={};
+  for(let k=0;k<n;k++){
+    const method=dv.getUint16(p+10,true),cs=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),el=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),off=dv.getUint32(p+42,true);
+    files[td.decode(u8.subarray(p+46,p+46+nl))]={method,cs,off};p+=46+nl+el+cl;
+  }
+  const z={
+    async get(name){const f=files[name];if(!f)return null;const s=f.off+30+dv.getUint16(f.off+26,true)+dv.getUint16(f.off+28,true);const d=u8.subarray(s,s+f.cs);return f.method===0?d.slice():inflateRaw(d)},
+    async text(name){const d=await z.get(name);return d?td.decode(d):null}
+  };
+  return z;
+}
+const xml=s=>new DOMParser().parseFromString(s||"<x/>","application/xml");
+const byTag=(el,t)=>Array.from(el.getElementsByTagNameNS("*",t));
+const RNS="http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+function resolve(dir,t){if(!t)return"";if(t.startsWith("/"))return t.slice(1);const out=[];for(const x of(dir+t).split("/")){if(x==="..")out.pop();else if(x!==".")out.push(x)}return out.join("/")}
+function relMap(doc){const m={};byTag(doc,"Relationship").forEach(r=>m[r.getAttribute("Id")]={t:r.getAttribute("Target"),type:r.getAttribute("Type")||""});return m}
+const colNum=s=>{let n=0;for(const ch of s)n=n*26+ch.charCodeAt(0)-64;return n};
+const serialToISO=v=>{const d=new Date(Date.UTC(1899,11,30)+Math.round(v*86400000));return d.toISOString().slice(0,10)};
+const toDataURL=(u8,mime)=>new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(new Blob([u8],{type:mime}))});
+
+async function readXlsx(buf){
+  const z=await unzip(buf);
+  const wbTxt=await z.text("xl/workbook.xml");
+  if(!wbTxt) throw new Error("Il file non contiene un foglio di lavoro Excel.");
+  const wb=xml(wbTxt),wr=relMap(xml(await z.text("xl/_rels/workbook.xml.rels")));
+  const sst=await z.text("xl/sharedStrings.xml");
+  const ss=sst?byTag(xml(sst),"si").map(si=>byTag(si,"t").map(t=>t.textContent).join("")):[];
+  const dateXf=new Set();const st=await z.text("xl/styles.xml");
+  if(st){const sd=xml(st),cf={};byTag(sd,"numFmt").forEach(n=>cf[n.getAttribute("numFmtId")]=n.getAttribute("formatCode")||"");
+    const xfs=byTag(sd,"cellXfs")[0];if(xfs)Array.from(xfs.children).forEach((xf,i)=>{const id=+xf.getAttribute("numFmtId");const code=(cf[id]||"").replace(/\[[^\]]*\]/g,"").replace(/"[^"]*"/g,"");if((id>=14&&id<=22)||/(dd|mm|yy)/i.test(code))dateXf.add(i)})}
+  const sheets=[];
+  for(const s of byTag(wb,"sheet")){
+    const name=s.getAttribute("name"),rid=s.getAttributeNS(RNS,"id")||s.getAttribute("r:id");
+    const path=resolve("xl/",(wr[rid]||{}).t);const doc=xml(await z.text(path));
+    const rows=[];
+    byTag(doc,"c").forEach(c=>{
+      const m=/([A-Z]+)(\d+)/.exec(c.getAttribute("r")||"");if(!m)return;
+      const t=c.getAttribute("t"),vEl=byTag(c,"v")[0];let v=null;
+      if(t==="s")v=vEl?ss[+vEl.textContent]:null;
+      else if(t==="inlineStr")v=byTag(c,"t").map(x=>x.textContent).join("");
+      else if(t==="str"||t==="e")v=vEl?vEl.textContent:null;
+      else if(t==="b")v=vEl?vEl.textContent==="1":null;
+      else if(vEl&&vEl.textContent!==""){v=+vEl.textContent;if(dateXf.has(+(c.getAttribute("s")||0)))v=serialToISO(v)}
+      if(v===null||v==="")return;
+      const r=+m[2];(rows[r]=rows[r]||[])[colNum(m[1])]=typeof v==="string"?v.trim():v;
+    });
+    const imgs={},dir=path.slice(0,path.lastIndexOf("/")+1);
+    const srTxt=await z.text(dir+"_rels/"+path.slice(dir.length)+".rels");
+    if(srTxt){for(const r of Object.values(relMap(xml(srTxt)))){
+      if(!/\/drawing$/.test(r.type))continue;
+      const dp=resolve(dir,r.t),dd=xml(await z.text(dp)),ddir=dp.slice(0,dp.lastIndexOf("/")+1);
+      const dr=relMap(xml(await z.text(ddir+"_rels/"+dp.slice(ddir.length)+".rels")));
+      for(const a of[...byTag(dd,"oneCellAnchor"),...byTag(dd,"twoCellAnchor")]){
+        const from=byTag(a,"from")[0],blip=byTag(a,"blip")[0];if(!from||!blip)continue;
+        const row=+byTag(from,"row")[0].textContent+1;
+        const emb=blip.getAttributeNS(RNS,"embed")||blip.getAttribute("r:embed");
+        const mp=resolve(ddir,(dr[emb]||{}).t);const data=await z.get(mp);if(!data)continue;
+        const ext=mp.split(".").pop().toLowerCase();
+        imgs[row]=await toDataURL(data,ext==="png"?"image/png":ext==="gif"?"image/gif":"image/jpeg");
+      }
+    }}
+    sheets.push({name,rows,imgs});
+  }
+  return sheets;
+}
+const cells=r=>(r||[]).map((v,i)=>[i,v]).filter(x=>x[1]!=null);
+
+/* ---------- interpretazione: esercizi ---------- */
+function findHeader(sh,word){
+  for(let r=1;r<sh.rows.length;r++){const row=sh.rows[r];if(!row)continue;
+    if(row.some(v=>typeof v==="string"&&norm(v)===norm(word))){const cols={};row.forEach((v,i)=>{if(v!=null)cols[i]=String(v)});return{r,cols}}}
+  return null;
+}
+function parseWorkout(sheets,file){
+  const out={file,info:null,days:[],other:[]};
+  for(const sh of sheets){
+    const h=findHeader(sh,"Esercizio");
+    if(h){
+      const ci=re=>{const e=Object.entries(h.cols).find(([,n])=>re.test(norm(n)));return e?+e[0]:null};
+      const C={num:ci(/^#$/),name:ci(/^esercizio/),sets:ci(/serie/),rest:ci(/recupero/),mus:ci(/muscoli/),how:ci(/come si esegue|esecuzione|descrizione/),err:ci(/errori/)};
+      const wcols=Object.entries(h.cols).filter(([,n])=>/^sett/i.test(n)).map(([i,n])=>({i:+i,n}));
+      const title=(sh.rows[1]&&sh.rows[1][1])||sh.name;
+      const notes=[];for(let r=2;r<h.r;r++)cells(sh.rows[r]).forEach(([,v])=>notes.push(String(v)));
+      const ex=[];
+      for(let r=h.r+1;r<sh.rows.length;r++){const row=sh.rows[r];if(!row||C.name==null||!row[C.name])continue;
+        ex.push({row:r,num:row[C.num]??ex.length+1,name:row[C.name],sets:row[C.sets]??"",rest:row[C.rest]??"",mus:row[C.mus]??"",how:row[C.how]??"",err:row[C.err]??"",img:sh.imgs[r]||null,weeks:wcols.map(w=>row[w.i]??null),wnames:wcols.map(w=>w.n)});}
+      out.days.push({sheet:sh.name,title:String(title),short:String(title).split(/\s[-–]\s/).slice(1).join(" - ")||String(title),key:dayKeyOf(sh.name)||dayKeyOf(title),notes,ex});
+    } else {
+      const items=[];let title=null;
+      sh.rows.forEach(row=>{const c=cells(row).filter(([,v])=>String(v).trim()!=="");if(!c.length)return;
+        if(!title&&c.length===1){title=String(c[0][1]);return}
+        if(c.length>=2)items.push({k:String(c[0][1]),v:c.slice(1).map(x=>fmtCell(x[1])).join(" · ")});else items.push({k:"",v:String(c[0][1])});});
+      const entry={sheet:sh.name,title:title||sh.name,items};
+      if(!out.info&&/come usare|istruzion|info/i.test(sh.name))out.info=entry;else out.other.push(entry);
+    }
+  }
+  if(!out.days.length) throw new Error("Non ho trovato fogli con la colonna \"Esercizio\". Controlla di aver scelto il file degli esercizi.");
+  return out;
+}
+
+/* ---------- interpretazione: dieta ---------- */
+function tableOf(sh){
+  let hr=null;for(let r=1;r<sh.rows.length;r++){if(cells(sh.rows[r]).length>=3){hr=r;break}}
+  const pre=[];if(hr==null)return{title:sh.name,pre:sh.rows.map(r=>cells(r).map(x=>x[1]).join(" · ")).filter(Boolean),head:[],body:[]};
+  for(let r=1;r<hr;r++){const c=cells(sh.rows[r]);if(c.length)pre.push(c.map(x=>fmtCell(x[1])).join(" "))}
+  const idx=cells(sh.rows[hr]).map(x=>x[0]);
+  const head=idx.map(i=>sh.rows[hr][i]);
+  const body=[];for(let r=hr+1;r<sh.rows.length;r++){const row=sh.rows[r];if(!row||!cells(row).length)continue;body.push(idx.map(i=>row[i]??null))}
+  return{title:sh.name,pre,head,body};
+}
+function parseDiet(sheets,file){
+  const out={file,cal:null,tables:[],weight:null};
+  for(const sh of sheets){
+    const h=findHeader(sh,"Pasto");
+    if(h&&!out.cal){
+      const dayCols=Object.entries(h.cols).filter(([i])=>+i>1).map(([i,n])=>({i:+i,name:n,key:dayKeyOf(n)})).filter(d=>d.key);
+      const targets=[];for(let r=1;r<h.r;r++){const row=sh.rows[r];if(row&&typeof row[1]==="string"&&typeof row[2]==="number")targets.push({k:row[1],v:row[2]})}
+      const cal={title:(sh.rows[1]&&sh.rows[1][1])||"Piano alimentare",sub:(sh.rows[2]&&sh.rows[2][1])||"",targets,days:{},meals:[],summary:[],notes:[]};
+      dayCols.forEach(d=>cal.days[d.key]={name:d.name,type:"",meals:[],sum:{}});
+      let r=h.r+1;
+      for(;r<sh.rows.length;r++){const row=sh.rows[r];if(!row||!cells(row).length)break;
+        const lab=String(row[1]||"");const nxt=sh.rows[r+1]||[];
+        if(norm(lab).startsWith("tipo")){dayCols.forEach(d=>cal.days[d.key].type=String(row[d.i]||""));continue}
+        if(norm(nxt[1])==="kcal"){const ml=lab.split("\n")[0];cal.meals.push({label:ml,sub:lab.split("\n").slice(1).join(" ")});
+          dayCols.forEach(d=>cal.days[d.key].meals.push({label:ml,what:row[d.i]||"",kcal:nxt[d.i]}));r++;continue}
+        cal.summary.push(lab);dayCols.forEach(d=>cal.days[d.key].sum[lab]=row[d.i]);
+      }
+      for(;r<sh.rows.length;r++){const c=cells(sh.rows[r]);if(c.length)cal.notes.push(c.map(x=>String(x[1])).join(" "))}
+      out.cal=cal;continue;
+    }
+    const t=tableOf(sh);
+    if(t.head.some(x=>/peso \(kg\)/i.test(String(x)))){
+      let target=null;for(const row of sh.rows){if(row&&/peso obiettivo/i.test(String(row[1]||""))&&typeof row[2]==="number")target=row[2]}
+      const iw=t.head.findIndex(x=>/peso \(kg\)/i.test(String(x))),idt=t.head.findIndex(x=>/^data/i.test(String(x))),isw=t.head.findIndex(x=>/settimana/i.test(String(x)));
+      out.weight={title:sh.name,pre:t.pre,target,rows:t.body.map((b,i)=>({w:isw>=0?b[isw]:i+1,date:idt>=0?b[idt]:null,kg:iw>=0?b[iw]:null}))};
+    }
+    out.tables.push(t);
+  }
+  if(!out.cal) throw new Error("Non ho trovato il foglio con la colonna \"Pasto\" e i giorni della settimana. Controlla di aver scelto il file della dieta.");
+  return out;
+}
+
+/* ---------- stato ---------- */
+let S=store.get("app-data")||{workout:null,diet:null,start:null};
+let pending={workout:S.workout,diet:S.diet};
+const save=()=>{if(!store.set("app-data",S))toast("Spazio pieno: i dati valgono solo per questa sessione")};
+function mondayOf(d){const x=new Date(d);x.setHours(12,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x}
+if(!S.start)S.start=isoOf(mondayOf(new Date()));
+function weekNum(date){const s=new Date(S.start+"T12:00:00");const d=new Date(date);d.setHours(12,0,0,0);const diff=Math.floor((d-s)/86400000);if(diff<0)return null;return Math.floor(diff/7)+1}
+const logKey=(day,ex,w)=>`log|${day}|${ex}|${w}`;
+const doneKey=(iso,day,ex)=>`done|${iso}|${day}|${ex}`;
+const isDone=(iso,day,e)=>store.get(doneKey(iso,day,e.name))===true;
+const doneCount=(iso,w)=>w?w.ex.filter(e=>isDone(iso,w.sheet,e)).length:0;
+function getLog(day,exObj,w){const v=store.get(logKey(day,exObj.name,w));if(v!=null)return v;const x=exObj.weeks[w-1];return x==null?"":String(fmtCell(x))}
+
+/* ---------- caricamento ---------- */
+function b64ToBuf(b){const s=atob(b),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u.buffer}
+async function load(kind,buf,fname){
+  const res=$(kind==="ex"?"#res-ex":"#res-di");res.hidden=false;res.innerHTML=`<p class="muted">Sto leggendo ${esc(fname)}…</p>`;
+  try{
+    const sheets=await readXlsx(buf);
+    if(kind==="ex"){pending.workout=parseWorkout(sheets,fname);showRes("ex")}
+    else{pending.diet=parseDiet(sheets,fname);showRes("di")}
+  }catch(e){res.innerHTML=`<p class="err">Non sono riuscito a leggere il file.</p><p class="small">${esc(e.message||e)}</p>`;
+    if(kind==="ex"){pending.workout=null;$("#next-ex").disabled=true}else{pending.diet=null;$("#next-di").disabled=true}}
+}
+function showRes(kind){
+  if(kind==="ex"){const w=pending.workout;if(!w)return;const res=$("#res-ex");res.hidden=false;
+    const nImg=w.days.reduce((a,d)=>a+d.ex.filter(e=>e.img).length,0),nEx=w.days.reduce((a,d)=>a+d.ex.length,0);
+    res.innerHTML=`<h3>${esc(w.file)}</h3><p class="muted small">${w.days.length} giorni di allenamento · ${nEx} esercizi · ${nImg} immagini${w.info?" · foglio istruzioni":""}</p><div class="found">${w.days.map(d=>`<span class="pill train">${esc(d.title)}</span>`).join("")}</div>`;
+    $("#next-ex").disabled=false;}
+  else{const d=pending.diet;if(!d)return;const res=$("#res-di");res.hidden=false;
+    res.innerHTML=`<h3>${esc(d.file)}</h3><p class="muted small">${Object.keys(d.cal.days).length} giorni · ${d.cal.meals.length} pasti al giorno · fogli: ${d.tables.map(t=>esc(t.title)).join(", ")||"solo calendario"}</p><div class="found">${Object.values(d.cal.days).map(x=>{const k=x.sum[Object.keys(x.sum).find(s=>/totale kcal/i.test(s))];return`<span class="pill kcal">${esc(x.name.slice(0,3))} ${k!=null?esc(fmtNum(k))+" kcal":""}</span>`}).join("")}</div>`;
+    $("#next-di").disabled=false;}
+}
+function wireDrop(kind){
+  const drop=$(kind==="ex"?"#drop-ex":"#drop-di"),inp=$(kind==="ex"?"#file-ex":"#file-di");
+  inp.addEventListener("change",async()=>{const f=inp.files[0];if(f)await load(kind,await f.arrayBuffer(),f.name);inp.value=""});
+  drop.addEventListener("dragover",e=>{e.preventDefault();drop.classList.add("over")});
+  drop.addEventListener("dragleave",()=>drop.classList.remove("over"));
+  drop.addEventListener("drop",async e=>{e.preventDefault();drop.classList.remove("over");const f=e.dataTransfer.files[0];if(f)await load(kind,await f.arrayBuffer(),f.name)});
+}
+wireDrop("ex");wireDrop("di");
+async function loadDemo(kind,fname){
+  const res=$(kind==="ex"?"#res-ex":"#res-di");res.hidden=false;res.innerHTML=`<p class="muted">Sto scaricando ${esc(fname)}…</p>`;
+  try{const r=await fetch("esempi/"+encodeURIComponent(fname));if(!r.ok)throw new Error(r.status);await load(kind,await r.arrayBuffer(),fname)}
+  catch(e){res.innerHTML=`<p class="err">Non trovo il file "${esc(fname)}" nella cartella esempi del sito.</p><p class="small">Caricalo dal telefono con il riquadro qui sopra.</p>`}
+}
+$("#demo-ex").addEventListener("click",()=>loadDemo("ex","Scheda_Allenamento_Casa.xlsx"));
+$("#demo-di").addEventListener("click",()=>loadDemo("di","Piano_Alimentare_Settimanale.xlsx"));
+$("#enter").addEventListener("click",()=>go(S.workout&&S.diet?"calendario":"carica-esercizi"));
+$("#next-ex").addEventListener("click",()=>go("carica-dieta"));
+$("#next-di").addEventListener("click",()=>{S.workout=pending.workout;S.diet=pending.diet;save();selDate=new Date();viewWeek=mondayOf(new Date());go("calendario")});
+
+/* ---------- calendario ---------- */
+let viewWeek=mondayOf(new Date()),selDate=new Date();
+const workoutFor=k=>S.workout?S.workout.days.find(d=>d.key===k):null;
+const dietFor=k=>S.diet&&S.diet.cal?S.diet.cal.days[k]:null;
+const sumVal=(dd,re)=>{if(!dd)return null;const k=Object.keys(dd.sum).find(s=>re.test(s));return k?dd.sum[k]:null};
+function renderCal(){
+  const start=new Date(viewWeek),end=new Date(start);end.setDate(start.getDate()+6);
+  const sameM=start.getMonth()===end.getMonth();
+  $("#month-title").textContent=sameM?`${start.getDate()}–${end.getDate()} ${MONTHS[end.getMonth()]}`:`${start.getDate()} ${MONTHS[start.getMonth()].slice(0,3)} – ${end.getDate()} ${MONTHS[end.getMonth()].slice(0,3)}`;
+  const wk=weekNum(start);
+  $("#week-sub").textContent=`${end.getFullYear()}${wk?` · Settimana ${wk} del programma`:""}`;
+  const today=isoOf(new Date()),sel=isoOf(selDate);let h="";
+  for(let i=0;i<7;i++){const d=new Date(start);d.setDate(start.getDate()+i);
+    const k=DAYKEYS[i],w=workoutFor(k),dd=dietFor(k),kc=sumVal(dd,/totale kcal/i),iso=isoOf(d);
+    const dn=doneCount(iso,w),all=w&&dn===w.ex.length;
+    h+=`<button class="day${iso===today?" today":""}${iso===sel?" sel":""}" data-d="${iso}" aria-label="${DAYNAMES[i]} ${d.getDate()} ${MONTHS[d.getMonth()]}${w?`, ${esc(w.short)}, ${dn} di ${w.ex.length} esercizi fatti`:", riposo"}">
+      <span class="dn">${DAYNAMES[i].slice(0,3)}</span><span class="n">${d.getDate()}</span>
+      <span class="bar${all?" ok":w?" t":""}"></span>
+      ${w?`<span class="k">${esc(w.short)}</span><span class="prog${all?" ok":""}">${all?"✓ fatto":`${dn}/${w.ex.length}`}</span>`:`<span class="k">Riposo</span>`}
+      ${kc!=null?`<span class="k">${esc(fmtNum(kc))} kcal</span>`:""}</button>`;}
+  $("#cal").innerHTML=h;
+  $("#cal").querySelectorAll(".day").forEach(b=>b.addEventListener("click",()=>{selDate=new Date(b.dataset.d+"T12:00:00");renderCal();$("#daydetail").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"})}));
+  renderDay();
+}
+function exHTML(day,e,w,full,iso){
+  const logged=w?getLog(day.sheet,e,w):"";const dn=iso?isDone(iso,day.sheet,e):false;
+  return `<div class="ex${dn?" done":""}">
+    <div class="ex-top"><span class="num">${esc(e.num)}</span><div style="flex:1;display:flex;flex-direction:column;gap:6px">
+      <h3>${esc(e.name)}</h3>
+      <div class="meta">${e.sets?`<span>${esc(e.sets)}</span>`:""}${e.rest?`<span>Recupero ${esc(e.rest)}</span>`:""}</div>
+      ${e.mus?`<p class="muted small">${esc(e.mus)}</p>`:""}
+    </div>${iso?`<button class="check${dn?" on":""}" data-iso="${iso}" data-day="${esc(day.sheet)}" data-row="${e.row}" aria-pressed="${dn}" aria-label="Segna ${esc(e.name)} come fatto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>`:""}</div>
+    ${e.img?`<div class="imgbox"><img src="${e.img}" alt="Posizione di partenza e di arrivo: ${esc(e.name)}" loading="lazy"></div>`:""}
+    <details${full?" open":""}><summary>Come si esegue</summary><div class="pre">${esc(e.how)}</div></details>
+    ${e.err?`<details><summary>Errori da evitare</summary><div class="pre">${esc(e.err)}</div></details>`:""}
+    ${w&&e.wnames.length?`<div class="log"><label for="lg-${esc(day.sheet)}-${e.row}">Sett. ${w>e.wnames.length?((w-1)%e.wnames.length)+1:w}: peso / ripetizioni</label><input id="lg-${esc(day.sheet)}-${e.row}" data-day="${esc(day.sheet)}" data-row="${e.row}" data-w="${w>e.wnames.length?((w-1)%e.wnames.length)+1:w}" value="${esc(logged)}" placeholder="es. 12 kg – 10/9/8/8" inputmode="text"></div>`:""}
+  </div>`;
+}
+function wireChecks(root,after){
+  root.querySelectorAll(".check").forEach(b=>b.addEventListener("click",()=>{
+    const day=S.workout.days.find(d=>d.sheet===b.dataset.day),e=day.ex.find(x=>x.row===+b.dataset.row);
+    const now=!isDone(b.dataset.iso,day.sheet,e);
+    if(now)store.set(doneKey(b.dataset.iso,day.sheet,e.name),true);else store.del(doneKey(b.dataset.iso,day.sheet,e.name));
+    const n=doneCount(b.dataset.iso,day);toast(now?(n===day.ex.length?"Allenamento completato!":`Fatto: ${n} di ${day.ex.length}`):"Spunta tolta");
+    after();
+  }));
+}
+function wireLogs(root){
+  root.querySelectorAll(".log input").forEach(inp=>inp.addEventListener("change",()=>{
+    const day=S.workout.days.find(d=>d.sheet===inp.dataset.day),e=day.ex.find(x=>x.row===+inp.dataset.row);
+    store.set(logKey(day.sheet,e.name,+inp.dataset.w),inp.value.trim());toast("Salvato");
+  }));
+}
+function mealsHTML(dd,short){
+  if(!dd)return`<p class="muted">Nessun pasto per questo giorno nel file della dieta.</p>`;
+  const tots=Object.entries(dd.sum).filter(([k])=>!/obiettivo raggiunto/i.test(k));
+  return `${dd.type?`<span class="pill ${/allen/i.test(dd.type)?"train":"rest"}">${esc(dd.type)}</span>`:""}
+    <div>${dd.meals.map(m=>`<div class="meal"><h3>${esc(m.label)}</h3><span class="kc">${m.kcal!=null?esc(fmtNum(m.kcal))+" kcal":""}</span>${short?"":`<div class="what">${esc(m.what)}</div>`}</div>`).join("")}</div>
+    <div class="totals">${tots.map(([k,v])=>`<div class="tot"><b>${esc(fmtNum(v))}</b><span>${esc(k)}</span></div>`).join("")}</div>`;
+}
+function renderDay(){
+  const d=selDate,k=DAYKEYS[(d.getDay()+6)%7],w=workoutFor(k),dd=dietFor(k),wk=weekNum(d),iso=isoOf(d);
+  const head=`<div><span class="eyebrow">${isoOf(d)===isoOf(new Date())?"Oggi · ":""}${DAYNAMES[(d.getDay()+6)%7]} ${d.getDate()} ${MONTHS[d.getMonth()]}${wk?` · Settimana ${wk}`:""}</span></div>`;
+  let h=head;
+  const dn=doneCount(iso,w),all=w&&dn===w.ex.length;
+  h+=`<div class="card"><div class="row spread"><h2>${w?esc(w.title):"Riposo"}</h2>${w?`<span class="pill ${all?"rest":"train"}">${all?"✓ Completato":`${dn} di ${w.ex.length} fatti`}</span>`:`<span class="pill rest">Recupero</span>`}</div>`;
+  if(w){h+=`<div class="donebar" aria-hidden="true"><span style="width:${Math.round(dn/w.ex.length*100)}%"></span></div><p class="muted small">Tocca il cerchio accanto a ogni esercizio quando lo hai finito.</p>`;w.notes.forEach(n=>h+=`<p class="note">${esc(n)}</p>`);h+=w.ex.map(e=>exHTML(w,e,wk,false,iso)).join("")}
+  else h+=`<p class="muted">Oggi niente scheda: recupera, cammina e mangia secondo il piano.</p>`;
+  h+=`</div><div class="card"><h2>Pasti</h2>${mealsHTML(dd,false)}</div>`;
+  $("#daydetail").innerHTML=h;wireLogs($("#daydetail"));wireChecks($("#daydetail"),renderCal);
+}
+function shiftWeek(n){const d=new Date(viewWeek);d.setDate(d.getDate()+7*n);viewWeek=d;const s2=new Date(selDate);s2.setDate(s2.getDate()+7*n);selDate=s2;renderCal()}
+$("#prev").addEventListener("click",()=>shiftWeek(-1));
+$("#next").addEventListener("click",()=>shiftWeek(1));
+$("#today-btn").addEventListener("click",()=>{viewWeek=mondayOf(new Date());selDate=new Date();renderCal()});
+$("#start").addEventListener("change",e=>{if(e.target.value){S.start=e.target.value;save();renderCal();toast("Data di inizio aggiornata")}});
+
+/* ---------- allenamento ---------- */
+let wTab=0;
+function renderWorkout(){
+  const W=S.workout;const tabs=W.days.map((d,i)=>`<button class="tab${i===wTab?" on":""}" data-i="${i}">${esc(d.title)}</button>`);
+  W.other.forEach((o,i)=>tabs.push(`<button class="tab${wTab===100+i?" on":""}" data-i="${100+i}">${esc(o.sheet)}</button>`));
+  $("#wtabs").innerHTML=tabs.join("");
+  $("#wtabs").querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{wTab=+b.dataset.i;renderWorkout()}));
+  if(wTab>=100){const o=W.other[wTab-100];$("#wbody").innerHTML=`<div class="card">${infoItems(o)}</div>`;return}
+  const d=W.days[wTab]||W.days[0];const wk=weekNum(new Date());const tk=DAYKEYS[(new Date().getDay()+6)%7];const tiso=d.key===tk?isoOf(new Date()):null;
+  let h=`<div class="card">${tiso?`<p class="note">È la scheda di oggi: puoi spuntare gli esercizi anche da qui.</p>`:""}${d.notes.map(n=>`<p class="note">${esc(n)}</p>`).join("")}${d.ex.map(e=>exHTML(d,e,null,false,tiso)+weeksHTML(d,e,wk)).join("")}</div>`;
+  $("#wbody").innerHTML=h;wireChecks($("#wbody"),renderWorkout);
+}
+function weeksHTML(d,e,wk){
+  if(!e.wnames.length)return"";const cur=wk?((wk-1)%e.wnames.length)+1:null;
+  return `<div class="weeks" aria-label="Pesi segnati">${e.wnames.map((n,i)=>{const v=getLog(d.sheet,e,i+1);return`<span class="${cur===i+1?"cur":""}">${esc(n)}: ${v?esc(v):"–"}</span>`}).join("")}</div>`;
+}
+
+/* ---------- dieta ---------- */
+let dTab="settimana";
+function renderDiet(){
+  const D=S.diet;const tabs=[["settimana","Settimana"]];if(D.cal.targets.length||D.cal.notes.length)tabs.push(["consigli","Obiettivi e consigli"]);
+  if(D.weight)tabs.push(["peso","Diario peso"]);
+  D.tables.forEach((t,i)=>{if(!(D.weight&&t.title===D.weight.title))tabs.push(["t"+i,t.title])});
+  $("#dtabs").innerHTML=tabs.map(([k,n])=>`<button class="tab${k===dTab?" on":""}" data-k="${k}">${esc(n)}</button>`).join("");
+  $("#dtabs").querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{dTab=b.dataset.k;renderDiet()}));
+  const B=$("#dbody");
+  if(dTab==="settimana"){
+    B.innerHTML=`<p class="muted">${esc(D.cal.sub)}</p><div class="weekgrid">${DAYKEYS.filter(k=>D.cal.days[k]).map(k=>`<div class="card"><h2>${esc(D.cal.days[k].name)}</h2>${mealsHTML(D.cal.days[k],false)}</div>`).join("")}</div>`;
+  }else if(dTab==="consigli"){
+    B.innerHTML=`<div class="card"><h2>Obiettivi</h2>${D.cal.targets.map(t=>`<div class="row spread"><span>${esc(t.k)}</span><strong style="font-variant-numeric:tabular-nums">${esc(fmtNum(t.v))}</strong></div>`).join("")}</div>
+      <div class="card">${D.cal.notes.map((n,i)=>i===0&&!n.startsWith("•")?`<h2>${esc(n)}</h2>`:`<p>${esc(n)}</p>`).join("")}</div>`;
+  }else if(dTab==="peso"){renderWeight(B)}
+  else{const t=D.tables[+dTab.slice(1)];B.innerHTML=tableHTML(t)}
+}
+function tableHTML(t){
+  return `${t.pre.map(p=>`<p class="muted small">${esc(p)}</p>`).join("")}<div class="tablewrap"><table><thead><tr>${t.head.map(x=>`<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>${t.body.map(r=>`<tr>${r.map(v=>`<td class="${typeof v==="number"?"n":""}">${esc(fmtCell(v))}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+function renderWeight(B){
+  const W=S.diet.weight;const local=store.get("weights|"+S.diet.file)||{};
+  const rows=W.rows.map(r=>({w:r.w,date:local[r.w]?.date??(r.date||""),kg:local[r.w]?.kg??(r.kg??"")}));
+  let prev=null;const pts=[];
+  const lines=rows.map(r=>{const kg=r.kg===""?null:+String(r.kg).replace(",",".");let diff="";if(kg!=null&&prev!=null){const d=Math.round((kg-prev)*10)/10;diff=(d>0?"+":"")+d.toLocaleString("it-IT")}if(kg!=null){prev=kg;pts.push({w:+r.w,kg})}
+    return`<div class="wrow"><span class="muted">S${esc(r.w)}</span><input type="date" aria-label="Data settimana ${esc(r.w)}" data-w="${esc(r.w)}" data-f="date" value="${esc(r.date)}"><input type="text" inputmode="decimal" aria-label="Peso settimana ${esc(r.w)}" placeholder="kg" data-w="${esc(r.w)}" data-f="kg" value="${esc(r.kg===""?"":String(r.kg).replace(".",","))}"><span class="d">${esc(diff)}</span></div>`}).join("");
+  const last=pts.length?pts[pts.length-1].kg:null;
+  B.innerHTML=`<div class="card"><div class="totals">
+    ${W.target!=null?`<div class="tot"><b>${esc(fmtNum(W.target))} kg</b><span>Obiettivo</span></div>`:""}
+    ${last!=null?`<div class="tot"><b>${esc(fmtNum(last))} kg</b><span>Ultimo peso</span></div>`:""}
+    ${last!=null&&W.target!=null?`<div class="tot"><b>${esc(fmtNum(Math.abs(Math.round((W.target-last)*10)/10)))} kg</b><span>Alla meta</span></div>`:""}
+  </div><div class="chart">${chartSVG(pts,W.target)}</div></div>
+  <div class="card"><div class="wrow small muted"><span>Sett.</span><span>Data</span><span>Peso (kg)</span><span style="text-align:right">Variaz.</span></div>${lines}
+  <p class="muted small">Pesati al mattino a digiuno. I pesi che scrivi qui restano salvati su questo dispositivo.</p></div>`;
+  B.querySelectorAll(".wrow input").forEach(inp=>inp.addEventListener("change",()=>{const l=store.get("weights|"+S.diet.file)||{};const w=inp.dataset.w;l[w]=l[w]||{};
+    l[w][inp.dataset.f]=inp.dataset.f==="kg"?inp.value.trim().replace(",","."):inp.value;store.set("weights|"+S.diet.file,l);renderWeight(B);toast("Salvato")}));
+}
+function chartSVG(pts,target){
+  const W=360,H=190,P={l:34,r:10,t:16,b:26};
+  if(!pts.length)return`<p class="muted small">Il grafico compare dopo il primo peso segnato.</p>`;
+  const vals=pts.map(p=>p.kg).concat(target!=null?[target]:[]);let mn=Math.floor(Math.min(...vals)-1),mx=Math.ceil(Math.max(...vals)+1);
+  const maxW=Math.max(8,...pts.map(p=>p.w));const x=w=>P.l+(w-1)/(maxW-1||1)*(W-P.l-P.r),y=v=>P.t+(mx-v)/(mx-mn)*(H-P.t-P.b);
+  let g="";for(let v=mn;v<=mx;v++){if((mx-mn)>8&&v%2)continue;g+=`<line x1="${P.l}" x2="${W-P.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${P.l-6}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}</text>`}
+  for(let w=1;w<=maxW;w++)g+=`<text x="${x(w)}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--muted)">S${w}</text>`;
+  const t=target!=null?`<line x1="${P.l}" x2="${W-P.r}" y1="${y(target)}" y2="${y(target)}" stroke="var(--rest)" stroke-dasharray="5 4" stroke-width="2"/><text x="${W-P.r}" y="${y(target)-6}" text-anchor="end" font-size="11" fill="var(--rest)">obiettivo ${target} kg</text>`:"";
+  const path=pts.map((p,i)=>`${i?"L":"M"}${x(p.w)},${y(p.kg)}`).join(" ");
+  const lp=pts[pts.length-1];
+  return`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Andamento del peso">${g}${t}<path d="${path}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round"/>${pts.map(p=>`<circle cx="${x(p.w)}" cy="${y(p.kg)}" r="3.5" fill="var(--accent)"/>`).join("")}<circle cx="${x(lp.w)}" cy="${y(lp.kg)}" r="6" fill="none" stroke="var(--accent)" stroke-width="2"/></svg>`;
+}
+
+/* ---------- info + file ---------- */
+function infoItems(o){return o.items.map(it=>`<div class="info${/segnali|sicurezza/i.test(it.k)?" alert":""}">${it.k?`<h3>${esc(it.k)}</h3>`:""}<p class="pre" style="margin:0">${esc(it.v)}</p></div>`).join("")}
+function renderInfo(){
+  const I=S.workout.info;
+  if(!I){$("#info-title").textContent="Informazioni";$("#info-body").innerHTML=`<p class="muted">Il file degli esercizi non ha un foglio "Come usare".</p>`;return}
+  $("#info-title").textContent=I.title;$("#info-body").innerHTML=infoItems(I);
+}
+function renderFiles(){
+  $("#files-body").innerHTML=`<div class="row spread"><div><h3>Esercizi</h3><p class="muted small">${esc(S.workout.file)}</p></div><span class="pill train">${S.workout.days.length} giorni</span></div>
+  <div class="row spread"><div><h3>Dieta</h3><p class="muted small">${esc(S.diet.file)}</p></div><span class="pill kcal">${S.diet.cal.meals.length} pasti/giorno</span></div>`;
+}
+$("#wipe").addEventListener("click",()=>{
+  const b=$("#wipe");if(!b.dataset.c){b.dataset.c="1";b.textContent="Tocca di nuovo per confermare";$("#wipe-msg").textContent="Verranno cancellati i file caricati, i pesi segnati, le spunte e il diario del peso su questo dispositivo.";return}
+  try{Object.keys(localStorage).filter(k=>k==="app-data"||k.startsWith("log|")||k.startsWith("weights|")||k.startsWith("done|")).forEach(k=>localStorage.removeItem(k))}catch(e){}
+  S={workout:null,diet:null,start:isoOf(mondayOf(new Date()))};pending={workout:null,diet:null};delete b.dataset.c;b.textContent="Cancella dati e pesi salvati su questo dispositivo";$("#wipe-msg").textContent="";go("benvenuto");
+});
+
+/* ---------- router ---------- */
+const ROUTES=["benvenuto","carica-esercizi","carica-dieta","calendario","allenamento","dieta","info","file"];
+const NEEDS=["calendario","allenamento","dieta","info","file"];
+function go(r){if(location.hash.slice(1)===r)route();else location.hash=r}
+function route(){
+  let r=location.hash.slice(1);if(!ROUTES.includes(r))r=S.workout&&S.diet?"calendario":"benvenuto";
+  if(NEEDS.includes(r)&&!(S.workout&&S.diet))r="benvenuto";
+  document.querySelectorAll(".view[id^=v-]").forEach(v=>v.classList.toggle("on",v.id==="v-"+r));
+  $("#nav").classList.toggle("hide",!NEEDS.includes(r));
+  document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("on",a.dataset.r===r));
+  if(r==="carica-esercizi")showRes("ex");if(r==="carica-dieta")showRes("di");
+  if(r==="calendario"){$("#start").value=S.start;renderCal()}
+  if(r==="allenamento")renderWorkout();if(r==="dieta")renderDiet();if(r==="info")renderInfo();if(r==="file")renderFiles();
+  window.scrollTo(0,0);
+}
+document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.go)));
+window.addEventListener("hashchange",route);
+route();
+</script>
+</body>
+</html>
